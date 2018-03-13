@@ -11,7 +11,7 @@ trait ApiEndpoint {
 object ApiEndpoint {
   final case class Config(uri: Uri, headers: Map[String, String])
 
-  final case class Static(static: Uri, headers: Map[String, String]) extends ApiEndpoint {
+  final case class Static(static: Uri, headers: Map[String, String] = Map()) extends ApiEndpoint {
     override val config: IO[Config] = IO.pure(Config(static, headers))
   }
   final case class Dynamic(config: IO[Config]) extends ApiEndpoint
