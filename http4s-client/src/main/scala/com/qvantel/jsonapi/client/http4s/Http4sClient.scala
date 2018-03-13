@@ -29,8 +29,8 @@ trait Http4sClient extends Http4sClientDsl[IO] {
     override def one[A](id: String, include: Set[String] = Set.empty)(implicit pt: PathToId[A],
                                                                       reader: JsonApiReader[A]): IO[Option[A]] =
       for {
-        baseUri  <- endpoint.uri
-        response <- pathOne(baseUri / pt.self(id), include)
+        config <- endpoint.config
+        response <- pathOne(config.uri / pt.self(id), include)
       } yield response
 
     override def many[A](ids: Set[String], include: Set[String] = Set.empty)(implicit pt: PathToId[A],
@@ -47,10 +47,10 @@ trait Http4sClient extends Http4sClientDsl[IO] {
       implicit val _include: Include = Include(include)
 
       for {
-        baseUri <- endpoint.uri
+        config <- endpoint.config
         uri <- IO.fromEither(
           org.http4s.Uri
-            .fromString(baseUri / pt.root ? ("filter" -> filter) ? ("include" -> mkIncludeString(include))))
+            .fromString(config.uri / pt.root ? ("filter" -> filter) ? ("include" -> mkIncludeString(include))))
         response <- client.expect[List[A]](uri)
       } yield response
     }
@@ -60,10 +60,10 @@ trait Http4sClient extends Http4sClientDsl[IO] {
       implicit val _include: Include = Include(include)
 
       val request = for {
-        baseUri <- endpoint.uri
+        config <- endpoint.config
         uri <- IO.fromEither(
           org.http4s.Uri
-            .fromString(baseUri.copy(pathParts = path.pathParts) ? ("include" -> mkIncludeString(include))))
+            .fromString(config.uri.copy(pathParts = path.pathParts) ? ("include" -> mkIncludeString(include))))
         request <- GET(uri)
       } yield request
 
@@ -79,10 +79,10 @@ trait Http4sClient extends Http4sClientDsl[IO] {
       implicit val _include: Include = Include(include)
 
       for {
-        baseUri <- endpoint.uri
+        config <- endpoint.config
         uri <- IO.fromEither(
           org.http4s.Uri
-            .fromString(baseUri.copy(pathParts = path.pathParts) ? ("include" -> mkIncludeString(include))))
+            .fromString(config.uri.copy(pathParts = path.pathParts) ? ("include" -> mkIncludeString(include))))
         response <- client.expect[List[A]](uri)
       } yield response
     }
@@ -94,10 +94,10 @@ trait Http4sClient extends Http4sClientDsl[IO] {
       implicit val _include: Include = Include(include)
 
       val request = for {
-        baseUri <- endpoint.uri
+        config <- endpoint.config
         uri <- IO.fromEither(
           org.http4s.Uri
-            .fromString(baseUri / pt.entity(entity)))
+            .fromString(config.uri / pt.entity(entity)))
         req <- POST(uri, entity)
       } yield req
 
@@ -114,10 +114,10 @@ trait Http4sClient extends Http4sClientDsl[IO] {
       implicit val _include: Include = Include(include)
 
       for {
-        baseUri <- endpoint.uri
+        config <- endpoint.config
         uri <- IO.fromEither(
           org.http4s.Uri
-            .fromString(baseUri / pt.entity(entity)))
+            .fromString(config.uri / pt.entity(entity)))
         req      <- PUT(uri, entity)
         response <- client.fetchAs[Response](req)
       } yield response
@@ -130,10 +130,10 @@ trait Http4sClient extends Http4sClientDsl[IO] {
       implicit val _include: Include = Include(include)
 
       for {
-        baseUri <- endpoint.uri
+        config <- endpoint.config
         uri <- IO.fromEither(
           org.http4s.Uri
-            .fromString(baseUri / pt.entity(entity)))
+            .fromString(config.uri / pt.entity(entity)))
         req      <- PATCH(uri, entity)
         response <- client.fetchAs[Response](req)
       } yield response
@@ -145,10 +145,10 @@ trait Http4sClient extends Http4sClientDsl[IO] {
       implicit val _include: Include = Include(include)
 
       for {
-        baseUri <- endpoint.uri
+        config <- endpoint.config
         uri <- IO.fromEither(
           org.http4s.Uri
-            .fromString(baseUri / pt.entity(entity)))
+            .fromString(config.uri / pt.entity(entity)))
         req      <- DELETE(uri)
         response <- client.fetchAs[Response](req)
       } yield response

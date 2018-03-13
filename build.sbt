@@ -116,7 +116,7 @@ val scala211 = Seq(
 
 description in ThisBuild := "jsonapi.org scala implementation"
 
-version in ThisBuild := "8.0.0"
+version in ThisBuild := "8.0.0-zdtc-1.0"
 
 startYear in ThisBuild := Some(2015)
 
@@ -148,15 +148,7 @@ developers in ThisBuild := List(
   )
 )
 
-publishMavenStyle in ThisBuild := true
-
-publishTo in ThisBuild := {
-  val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value)
-    Some("snapshots" at nexus + "content/repositories/snapshots")
-  else
-    Some("releases" at nexus + "service/local/staging/deploy/maven2")
-}
+publishTo in ThisBuild := Some("Artifactory Realm" at "https://zdtc.jfrog.io/zdtc/sbt-release-local")
 
 publishArtifact in Test := false
 
