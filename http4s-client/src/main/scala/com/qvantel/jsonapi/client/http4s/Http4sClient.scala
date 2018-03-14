@@ -4,15 +4,15 @@ import cats.effect._
 import cats.instances.list._
 import cats.syntax.traverse._
 import com.netaporter.uri.config.UriConfig
-import com.netaporter.uri.{Uri => CoreUri}
 import com.netaporter.uri.dsl._
-import org.http4s.Status.Successful
-import org.http4s.client.{Client, UnexpectedStatus}
-import org.http4s.client.dsl.Http4sClientDsl
-import org.http4s.dsl.io._
-
+import com.netaporter.uri.{Uri => CoreUri}
 import com.qvantel.jsonapi._
 import com.qvantel.jsonapi.client.http4s.JsonApiInstances._
+import org.http4s.Header
+import org.http4s.Status.Successful
+import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.client.{Client, UnexpectedStatus}
+import org.http4s.dsl.io._
 
 trait Http4sClient extends Http4sClientDsl[IO] {
   private[this] def mkIncludeString(include: Set[String]): Option[String] =
@@ -21,6 +21,9 @@ trait Http4sClient extends Http4sClientDsl[IO] {
     } else {
       Some(include.mkString(","))
     }
+
+  private[this] def httpHeaders(headers: Map[String, String]): List[Header] =
+    headers.map(pair => Header(pair._1, pair._2)).toList
 
   implicit def instance(implicit endpoint: ApiEndpoint, client: Client[IO]): JsonApiClient = new JsonApiClient {
 
@@ -51,7 +54,7 @@ trait Http4sClient extends Http4sClientDsl[IO] {
         uri <- IO.fromEither(
           org.http4s.Uri
             .fromString(config.uri / pt.root ? ("filter" -> filter) ? ("include" -> mkIncludeString(include))))
-        response <- client.expect[List[A]](uri)
+        response <- client.expect[List[A]](GET(uri, httpHeaders(config.headers):_*))
       } yield response
     }
 
@@ -64,8 +67,8 @@ trait Http4sClient extends Http4sClientDsl[IO] {
         uri <- IO.fromEither(
           org.http4s.Uri
             .fromString(config.uri.copy(pathParts = path.pathParts) ? ("include" -> mkIncludeString(include))))
-        request <- GET(uri)
-      } yield request
+        req <- GET(uri, httpHeaders(config.headers):_*)
+      } yield req
 
       client.fetch(request) {
         case Successful(resp) => resp.as[A].map(Some(_))
@@ -83,7 +86,7 @@ trait Http4sClient extends Http4sClientDsl[IO] {
         uri <- IO.fromEither(
           org.http4s.Uri
             .fromString(config.uri.copy(pathParts = path.pathParts) ? ("include" -> mkIncludeString(include))))
-        response <- client.expect[List[A]](uri)
+        response <- client.expect[List[A]](GET(uri, httpHeaders(config.headers):_*))
       } yield response
     }
 
@@ -98,7 +101,7 @@ trait Http4sClient extends Http4sClientDsl[IO] {
         uri <- IO.fromEither(
           org.http4s.Uri
             .fromString(config.uri / pt.entity(entity)))
-        req <- POST(uri, entity)
+        req <- POST(uri, entity, httpHeaders(config.headers):_*)
       } yield req
 
       client.fetch(request) {
@@ -118,7 +121,7 @@ trait Http4sClient extends Http4sClientDsl[IO] {
         uri <- IO.fromEither(
           org.http4s.Uri
             .fromString(config.uri / pt.entity(entity)))
-        req      <- PUT(uri, entity)
+        req      <- PUT(uri, entity, httpHeaders(config.headers):_*)
         response <- client.fetchAs[Response](req)
       } yield response
     }
@@ -134,7 +137,7 @@ trait Http4sClient extends Http4sClientDsl[IO] {
         uri <- IO.fromEither(
           org.http4s.Uri
             .fromString(config.uri / pt.entity(entity)))
-        req      <- PATCH(uri, entity)
+        req      <- PATCH(uri, entity, httpHeaders(config.headers):_*)
         response <- client.fetchAs[Response](req)
       } yield response
     }
@@ -149,7 +152,7 @@ trait Http4sClient extends Http4sClientDsl[IO] {
         uri <- IO.fromEither(
           org.http4s.Uri
             .fromString(config.uri / pt.entity(entity)))
-        req      <- DELETE(uri)
+        req      <- DELETE(uri, httpHeaders(config.headers):_*)
         response <- client.fetchAs[Response](req)
       } yield response
     }
